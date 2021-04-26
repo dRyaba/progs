@@ -1,46 +1,43 @@
 #include <stdio.h>
+#include <stdlib.h>
 
+#define SIZE 64
 typedef struct matrix {
-    float matrix[64][64];
+    float matrix[SIZE][SIZE];
     float det;
     int size;
 } Matrix;
 
-float determinent(float matrix[64][64], int size) {
-    int m, n;
+float determinent(float matrix[][SIZE], int size, float minor[][SIZE]) {
     if (size == 1) {
         return (matrix[0][0]);
     } else if (size == 2)
         return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
     else {
-        float det = 0, s = 1, b[64][64];
+        float det = 0, s = 1;
         for (int c = 0; c < size; c++) {
-            m = n = 0;
-            for (register int i = 0; i < size; i++) {
-                for (register int j = 0; j < size; j++) {
-                    b[i][j] = 0;
-                    if (i != 0 && j != c) {
-                        b[m][n] = matrix[i][j];
-                        if (n < (size - 2)) {
-                            n++;
-                        } else {
-                            n = 0;
-                            m++;
-                        }
+            if (matrix[0][c] == 0) {
+                c++;
+            }
+            for (int i = 0; i < size - 1; i++) {
+                for (int j = 0, t = 0; j < size; j++, t++) {
+                    if (j == c) {
+                        j++;
                     }
+                    minor[i][t] = matrix[i + 1][j];
                 }
             }
-            det += s * (matrix[0][c] * determinent(b, size - 1));
+            det += s * (matrix[0][c] * determinent(minor, size - 1, minor));
             s = -1 * s;
         }
-    return (det);
+        return det;
     }
 }
 
 void qs(Matrix *arr, int first, int last) {
     if (first < last) {
         int left = first, right = last;
-        Matrix middle = arr[(left + right) / 2];
+        Matrix middle = arr[(rand() % (last - first) + first)];
         do {
             while (arr[left].det < middle.det) left++;
             while (arr[right].det > middle.det) right--;
@@ -58,21 +55,21 @@ void qs(Matrix *arr, int first, int last) {
 }
 
 int main() {
-    int n, k;
+    int n;
     FILE *input, *output;
     input = fopen("input.txt", "r"), output = fopen("output.txt", "w");
     if ((input == NULL) || (output == NULL))
-        return 72;
+        return 63;
     fscanf(input, "%d", &n);
     Matrix arr[n];
+    float minor[SIZE][SIZE] = {0};
     for (int i = 0; i < n; i++) {
-        fscanf(input, "%d", &k);
-        for (int j = 0; j < k; j++) {
-            for (int t = 0; t < k; t++)
+        fscanf(input, "%d", &arr[i].size);
+        for (int j = 0; j < arr[i].size; j++) {
+            for (int t = 0; t < arr[i].size; t++)
                 fscanf(input, "%f", &arr[i].matrix[j][t]);
         }
-        arr[i].det = determinent(arr[i].matrix, k);
-        arr[i].size = k;
+        arr[i].det = determinent(arr[i].matrix, arr[i].size, minor);
     }
     fclose(input);
     qs(arr, 0, n - 1);
