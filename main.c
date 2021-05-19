@@ -49,10 +49,7 @@ Node *insert(Node *root, Student student) {
 Node *removeNode(Node *root, double key) {// удаляет конкретную Ноду с avg = key
     if (root == NULL)
         return NULL;
-    if (key > root->key) { // если ключ больше текущего ключа,то ищет в детях
-        root->right = removeNode(root->right, key);
-        root->left = removeNode(root->left, key);
-    } else if (fabs(key - root->key) < epsilon) { // если ключ совпал с текущим, то должен очистить текущую ноду
+    if (fabs(key - root->key) < epsilon) { // если ключ совпал с текущим, то должен очистить текущую ноду
         if (!root->left && !root->right) { // если лист
             free(root);
             return NULL;
@@ -90,7 +87,7 @@ void memory_free(Node *root) {
     free(root);
 }
 
-int replacement(Node **tree, int id, int mark_place, int new_mark) {
+int replacement(Node **tree, Node **base_root, int id, int mark_place, int new_mark) {
     // получаем корень дерева, id, место оценки, новую оценку
     //берём двойной указатель, чтобы изменять дерево в main
     if (*tree == NULL)
@@ -101,7 +98,7 @@ int replacement(Node **tree, int id, int mark_place, int new_mark) {
                                      nmbr_of_marks); //из среднего значения убираем [mark_place] оценку
             (*tree)->same[i].marks[mark_place] = new_mark; //перезаписываем оценку
             (*tree)->same[i].avg += (*tree)->same[i].marks[mark_place] / nmbr_of_marks; // добавляем new_mark/10 к avg
-            *tree = insert(*tree, (*tree)->same[i]);
+            *base_root = insert(*base_root, (*tree)->same[i]);
             (*tree)->nmbr_of_students--; //теперь нужно его удалить из текущей ноды и заново поместить в дерево
             if ((*tree)->nmbr_of_students == 0) { //если студентов в вершине не осталось,
                 // то удаляем конкретную вершину с её avg
@@ -118,8 +115,8 @@ int replacement(Node **tree, int id, int mark_place, int new_mark) {
             return 1;
         }
     }
-    return replacement(&((*tree)->left), id, mark_place, new_mark) ||
-           replacement(&((*tree)->right), id, mark_place, new_mark) ? 1 : 0;
+    return replacement(&((*tree)->left), base_root, id, mark_place, new_mark) + replacement(&((*tree)->right),base_root, id, mark_place, new_mark);
+
     //заходит в детей если не вышел в вершине
 }
 
@@ -141,11 +138,14 @@ int good_studentcount(Node *root, double avg) {
 int bad_std_search(Node *root, double p, double *key_remove) {
     if (root == NULL)
         return 0;
-    if (root->key < p - epsilon) {
+    if (root->key < p) {
         *key_remove = root->key;
         return 1;
     }
-    return bad_std_search(root->left, p, key_remove);
+    if (root->left)
+        return bad_std_search(root->left, p, key_remove);
+    if (root->right)
+        return bad_std_search(root->right, p, key_remove);
 }
 
 int main() {
@@ -170,12 +170,12 @@ int main() {
         fscanf(input, "%s", inf); //считываем id следующего студента
     }
 
-    fscanf(input, "%s", inf); // считываем ненужный CHANGES:
+    fscanf(input, "%s", inf); // считываем id
     int id, mark_place, new_mark;
     while (strcmp(inf, "BORDERS:") != 0) {
         id = atoi(inf);
         fscanf(input, "%d%d", &mark_place, &new_mark);
-        replacement(&tree, id, mark_place, new_mark);
+        replacement(&tree, &tree, id, mark_place, new_mark);
         fscanf(input, "%s", inf);
     }
     double k, p;
@@ -183,7 +183,7 @@ int main() {
     fclose(input);
     double key_remove; //будем менять key_remove через указатели
     while (bad_std_search(tree, k, &key_remove))
-        removeNode(tree, key_remove);
+        tree = removeNode(tree, key_remove);
     fprintf(output, "%d %d", studentcount(tree), good_studentcount(tree, p));
     memory_free(tree);
     fclose(output);
