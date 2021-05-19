@@ -71,7 +71,7 @@ Node *removeNode(Node *root, double key) {// удаляет конкретную
             FLeftNode->key = temp;
             root->right = removeNode(root->right, key);
         }
-    } else{ // если ключ меньше текущего ключа то идёт искать в левую
+    } else{ // если ключ меньше текущего ключа то идёт искать в детей
         root->left = removeNode(root->left, key);
         root->right = removeNode(root->right, key);
     }
@@ -116,7 +116,6 @@ int replacement(Node **tree, Node **base_root, int id, int mark_place, int new_m
         }
     }
     return replacement(&((*tree)->left), base_root, id, mark_place, new_mark) + replacement(&((*tree)->right),base_root, id, mark_place, new_mark);
-
     //заходит в детей если не вышел в вершине
 }
 
@@ -142,12 +141,8 @@ int bad_std_search(Node *root, double p, double *key_remove) {
         *key_remove = root->key;
         return 1;
     }
-    if (root->left)
-        return bad_std_search(root->left, p, key_remove);
-    if (root->right)
-        return bad_std_search(root->right, p, key_remove);
+    return bad_std_search(root->left, p, key_remove);
 }
-
 int main() {
     char inf[256];
     Student cur_student;
