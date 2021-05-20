@@ -23,20 +23,32 @@ typedef struct Node_ {
 
 Node *getNewNode(Student student) {
     Node *newNode = (Node *) malloc(sizeof(Node));
+    if (!newNode)
+        return NULL;
     newNode->key = student.avg;
     newNode->nmbr_of_students = 1;
     newNode->same = (Student *) malloc(sizeof(Student));
+    if (!newNode->same)
+        return NULL;
     *(newNode->same) = student;
     newNode->left = NULL;
     newNode->right = NULL;
     return newNode;
 }
 
+int equality_compare(double a1, double a2){
+    if (fabs(a1 - a2) < epsilon)
+        return 1;
+    return 0;
+}
+
 Node *insert(Node *root, Student student) {
     if (root == NULL)
         return getNewNode(student);
-    if (fabs(student.avg - root->key) < epsilon) {
+    if (equality_compare(student.avg, root->key)) {
         root->same = (Student *) realloc(root->same, sizeof(student) * (root->nmbr_of_students+1));
+        if (!root->same)
+            return NULL;
         *(root->same + root->nmbr_of_students) = student;
         root->nmbr_of_students++;
     } else if (student.avg > root->key)
@@ -49,7 +61,7 @@ Node *insert(Node *root, Student student) {
 Node *removeNode(Node *root, double key) {// удаляет конкретную Ноду с avg = key
     if (root == NULL)
         return NULL;
-    if (fabs(key - root->key) < epsilon) { // если ключ совпал с текущим, то должен очистить текущую ноду
+    if (equality_compare(key, root->key)) { // если ключ совпал с текущим, то должен очистить текущую ноду
         if (!root->left && !root->right) { // если лист
             free(root);
             return NULL;
@@ -71,7 +83,7 @@ Node *removeNode(Node *root, double key) {// удаляет конкретную
             FLeftNode->key = temp;
             root->right = removeNode(root->right, key);
         }
-    } else{ // если ключ меньше текущего ключа то идёт искать в детей
+    } else{ // если ключ не равен текущему ключа то идёт искать в детей
         root->left = removeNode(root->left, key);
         root->right = removeNode(root->right, key);
     }
@@ -111,6 +123,8 @@ int replacement(Node **tree, Node **base_root, int id, int mark_place, int new_m
                 // нужного студента с ненужным и реаллоком уничтожим ненужного
                 // количество памяти теперь нам необходимое это количество оставшихся студентов * размер ноды студента
                 (*tree)->same = (Student *) realloc((*tree)->same, sizeof(Student) * (*tree)->nmbr_of_students);
+                if (!(*tree)->same)
+                    return 0;
             }
             return 1;
         }
@@ -129,7 +143,7 @@ int good_studentcount(Node *root, double avg) {
     if (root == NULL)
         return 0;
     int count = 0;
-    if ((root->key > avg) || fabs(root->key - avg) < epsilon)
+    if ((root->key > avg) || equality_compare(root->key,avg))
         count += root->nmbr_of_students;
     return count + good_studentcount(root->left, avg) + good_studentcount(root->right, avg);
 }
@@ -143,6 +157,7 @@ int bad_std_search(Node *root, double p, double *key_remove) {
     }
     return bad_std_search(root->left, p, key_remove);
 }
+
 int main() {
     char inf[256];
     Student cur_student;
