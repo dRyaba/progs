@@ -3,35 +3,32 @@
 
 #define SIZE 64
 typedef struct matrix {
-    float matrix[SIZE][SIZE];
-    float det;
+    double matrix[SIZE][SIZE];
+    double det;
     int size;
 } Matrix;
 
-float determinent(float matrix[][SIZE], int size, float minor[][SIZE]) {
-    if (size == 1) {
-        return (matrix[0][0]);
-    } else if (size == 2)
-        return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
-    else {
-        float det = 0, s = 1;
-        for (int c = 0; c < size; c++) {
-            if (matrix[0][c] == 0) {
-                c++;
+// из-за разложения по первой строке ряд проверяемого минора будет всегда на 1 больше текущего ряда
+// столбцы нужно проверять все на месте которых 0
+double determinent(double matrix[][SIZE], int size, int row, int column[], int cur_rank) {
+    double det = 0, s = 1;
+    for (int c = 0; c < size; c++) {
+        if (!column[c]) { // если мы нашли столбец, который не вычеркнут, проверяем на размер
+            if (cur_rank == 1)
+                return matrix[row][c];
+            if (cur_rank == 2) {
+                int i = c+1;
+                while (column[i] && i<size)
+                    i++;
+                return matrix[row][c] * matrix[row + 1][i] - matrix[row][i] * matrix[row + 1][c];
             }
-            for (int i = 0; i < size - 1; i++) {
-                for (int j = 0, t = 0; j < size; j++, t++) {
-                    if (j == c) {
-                        j++;
-                    }
-                    minor[i][t] = matrix[i + 1][j];
-                }
-            }
-            det += s * (matrix[0][c] * determinent(minor, size - 1, minor));
+            column[c]++; //если размер больше 2, то мы вычеркиваем столбец и запускаем рекурсию от этой матрицы
+            det += s * (matrix[0][c] * determinent(matrix, size, row + 1, column, cur_rank - 1));
             s = -1 * s;
+            column[c]--;
         }
-        return det;
     }
+    return det;
 }
 
 void qs(Matrix *arr, int first, int last) {
@@ -62,14 +59,14 @@ int main() {
         return 63;
     fscanf(input, "%d", &n);
     Matrix arr[n];
-    float minor[SIZE][SIZE] = {0};
+    int column[SIZE] = {0};
     for (int i = 0; i < n; i++) {
         fscanf(input, "%d", &arr[i].size);
         for (int j = 0; j < arr[i].size; j++) {
             for (int t = 0; t < arr[i].size; t++)
-                fscanf(input, "%f", &arr[i].matrix[j][t]);
+                fscanf(input, "%lf", &arr[i].matrix[j][t]);
         }
-        arr[i].det = determinent(arr[i].matrix, arr[i].size, minor);
+        arr[i].det = determinent(arr[i].matrix, arr[i].size, 0, column, arr[i].size);
     }
     fclose(input);
     qs(arr, 0, n - 1);
